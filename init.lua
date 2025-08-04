@@ -18,6 +18,11 @@ require("m.basic").setup({options = {
     relnum_in_visual_mode = false,
   }
   })
+  --todo
+  --handle empty brackets/quotes
+  --keymappings
 vim.keymap.set("n", "<leader>tt", function()
-  require("m.basic").my_ai()
+ require('m.basic').my_ai('c', 'a',"bracket")
+
 end)
+

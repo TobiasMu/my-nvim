@@ -18,6 +18,7 @@ M.config = {
   autocommands = {
     basic = true,
     relnum_in_visual_mode = false,
+
   }
 }
 setmetatable(M.config, {fuck= "fuck" })
@@ -341,15 +342,55 @@ H.map = function(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, opts)
 
 end
-M.my_ai = function()
+
+H.find_ai = function(line,target,csr_x)
+  t = {
+    ["quote"] = {'"', "'"},
+    ["bracket"] = {"%(","%[","%{","%<"},
+    pairs = {
+      ["("] = ")",
+      ["["] = "]",
+      ["{"] = "}",
+      ["<"] = ">",
+    }
+  }
+  if t[target] ~=nil then
+    match = nil
+    for _, val in ipairs(t[target]) do
+      vim.print(i,val)
+      s, e = string.find(line,val,csr_x)
+      if s ~= nil and match == nil then
+        match = s 
+      elseif s ~= nil and match ~=nil then
+        match = math.min(s, match)
+      end
+    end
+    target = string.sub(line,match,match)
+    return target, match
+  else
+    vim.print("no match")
+  end
+end
+
+
+-- @params mode can be c y and d
+-- @params target can be 'quotes', 'brackets' etc. 
+-- @params ai can be around or inside
+M.my_ai = function(mode,ai,target)
 local bufnr = vim.api.nvim_get_current_buf()
 local filename = vim.api.nvim_buf_get_name(bufnr)
 local csr = vim.api.nvim_win_get_cursor(0)
 local line = vim.api.nvim_get_current_line()
-local s,e = string.find(line, '"',csr[2]+2 )
+
+
+
+-- local s,e = string.find(line, target ,csr[2]+2 )
+target, pos = H.find_ai(line, target, csr[2])
+
+
 vim.api.nvim_win_set_cursor(0, {csr[1], s-1})
-vim.api.nvim_feedkeys('vi"', 'n', false)
--- vim.cmd('vi"')
+
+vim.api.nvim_feedkeys('v'..ai..target..mode, 'n', false)
 
 -- local lines = vim.api.nvim_buf_get_lines(bufnr,csr[1] , -1, false)
 -- local content = table.concat(lines, '\n')
