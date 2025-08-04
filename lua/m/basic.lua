@@ -1,7 +1,6 @@
 local M = {}
 local H = {} 
 
--- vim.api.nvim_get_option_info2(vim.opt.relativenumber, {scope = 'global' })
 
 M.config = {
 	options = {
@@ -116,15 +115,209 @@ H.apply_options = function(config)
     opt.splitbelow = true                          -- Horizontal splits go below
     opt.splitright = true                          -- Vertical splits go right
   end
+  
+  if config.options.statusline then
+
+    -- Git branch function
+    local function git_branch()
+      local branch = vim.fn.system("git branch --show-current 2>/dev/null | tr -d '\n'")
+      if branch ~= "" then
+        return "  " .. branch .. " "
+      end
+      return ""
+    end
+
+    -- File type with icon
+    local function file_type()
+      local ft = vim.bo.filetype
+      local icons = {
+        lua = "[LUA]",
+        python = "[PY]",
+        javascript = "[JS]",
+        html = "[HTML]",
+        css = "[CSS]",
+        json = "[JSON]",
+        markdown = "[MD]",
+        vim = "[VIM]",
+        sh = "[SH]",
+      }
+
+      if ft == "" then
+        return "  "
+      end
+
+      return (icons[ft] or ft)
+    end
+
+    -- LSP status
+    local function lsp_status()
+      local clients = vim.lsp.get_clients({ bufnr = 0 })
+      if #clients > 0 then
+        return "  LSP "
+      end
+      return ""
+    end
+
+    -- Word count for text files
+    local function word_count()
+      local ft = vim.bo.filetype
+      if ft == "markdown" or ft == "text" or ft == "tex" then
+        local words = vim.fn.wordcount().words
+        return "  " .. words .. " words "
+      end
+      return ""
+    end
+
+    -- File size
+    local function file_size()
+      local size = vim.fn.getfsize(vim.fn.expand('%'))
+      if size < 0 then return "" end
+      if size < 1024 then
+        return size .. "B "
+      elseif size < 1024 * 1024 then
+        return string.format("%.1fK", size / 1024)
+      else
+        return string.format("%.1fM", size / 1024 / 1024)
+      end
+    end
+
+    -- Mode indicators with icons
+    local function mode_icon()
+      local mode = vim.fn.mode()
+      local modes = {
+        n = "NORMAL",
+        i = "INSERT",
+        v = "VISUAL",
+        V = "V-LINE",
+        ["\22"] = "V-BLOCK",  -- Ctrl-V
+        c = "COMMAND",
+        s = "SELECT",
+        S = "S-LINE",
+        ["\19"] = "S-BLOCK",  -- Ctrl-S
+        R = "REPLACE",
+        r = "REPLACE",
+        ["!"] = "SHELL",
+        t = "TERMINAL"
+      }
+      return modes[mode] or "  " .. mode:upper()
+    end
+
+    _G.mode_icon = mode_icon
+    _G.git_branch = git_branch
+    _G.file_type = file_type
+    _G.file_size = file_size
+    _G.lsp_status = lsp_status
+
+    vim.cmd([[
+      highlight StatusLineBold gui=bold cterm=bold
+    ]])
+
+    -- Function to change statusline based on window focus
+    local function setup_dynamic_statusline()
+      vim.api.nvim_create_autocmd({"WinEnter", "BufEnter"}, {
+        callback = function()
+        vim.opt_local.statusline = table.concat {
+          "  ",
+          "%#StatusLineBold#",
+          "%{v:lua.mode_icon()}",
+          "%#StatusLine#",
+          " │ %f %h%m%r",
+          "%{v:lua.git_branch()}",
+          " │ ",
+          "%{v:lua.file_type()}",
+          " | ",
+          "%{v:lua.file_size()}",
+          " | ",
+          "%{v:lua.lsp_status()}",
+          "%=",                     -- Right-align everything after this
+          "%l:%c  %P ",             -- Line:Column and Percentage
+        }
+        end
+      })
+      vim.api.nvim_set_hl(0, "StatusLineBold", { bold = true })
+
+      vim.api.nvim_create_autocmd({"WinLeave", "BufLeave"}, {
+        callback = function()
+          vim.opt_local.statusline = "  %f %h%m%r │ %{v:lua.file_type()} | %=  %l:%c   %P "
+        end
+      })
+    end
+
+    setup_dynamic_statusline()
+  end
+
+
+
+
 end
 
 H.apply_mappings = function(config)
-  local.m
+  local map = vim.keymap.set
   if config.mappings.basic then
+    map("n", "<leader>xx", ":so<CR>", {desc=""})
+    map("n", "<leader>xx", ":so<CR>", {desc=""})
+    -- better up and down
+    map({ 'n', 'x' }, 'j', [[v:count == 0 ? 'gj' : 'j']], { expr = true })
+    map({ 'n', 'x' }, 'k', [[v:count == 0 ? 'gk' : 'k']], { expr = true })
 
 
+    map('n', 'gO', "<Cmd>call append(line('.') - 1, repeat([''], v:count1))<CR>")
+    map('n', 'go', "<Cmd>call append(line('.'),     repeat([''], v:count1))<CR>")
+    map('n', 'gV', '"`[" . strpart(getregtype(), 0, 1) . "`]"', { expr = true, replace_keycodes = false, desc = 'Visually select changed text' })
 
   end
+
+  if config.mappings.windows then
+    -- Window navigation
+    map('n', '<C-H>', '<C-w>h', { desc = 'Focus on left window' })
+    map('n', '<C-J>', '<C-w>j', { desc = 'Focus on below window' })
+    map('n', '<C-K>', '<C-w>k', { desc = 'Focus on above window' })
+    map('n', '<C-L>', '<C-w>l', { desc = 'Focus on right window' })
+  end
+
+  if config.mappings.lua_dev then
+    
+    map("n", "<leader>xx", ":so<cr>")
+    map("n", "<leader>xl", ":.lua<cr>")
+
+  end 
+
+  if config.mappings.vanilla_sugar then
+ -- Normal mode mappings
+
+-- Center screen when jumping
+    map("n", "n", "nzzzv", { desc = "Next search result (centered)" })
+    map("n", "N", "Nzzzv", { desc = "Previous search result (centered)" })
+    map("n", "<C-d>", "<C-d>zz", { desc = "Half page down (centered)" })
+    map("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })   
+
+    map("n", "-", ":e .<cr>")
+    --cheap mini ai
+    map("n", "ciq", [[f"vi"c]])
+    --copy full path
+    map("n", "<leader>pa", function()
+      local path = vim.fn.expand("%:p")
+      vim.fn.setreg("+", path)
+      print("file:", path)
+    end)
+
+    -- Move lines up/down
+    map("n", "<A-j>", ":m .+1<CR>==", { desc = "Move line down" })
+    map("n", "<A-k>", ":m .-2<CR>==", { desc = "Move line up" })
+    map("v", "<A-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+    map("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
+    -- Better indenting in visual mode
+    map("v", "<", "<gv", { desc = "Indent left and reselect" })
+    map("v", ">", ">gv", { desc = "Indent right and reselect" })
+
+    -- Quick file navigation
+    map("n", "<leader>e", ":Explore<CR>", { desc = "Open file explorer" })
+    map("n", "<leader>ff", ":find ", { desc = "Find file" })
+
+    -- Better J behavior
+    map("n", "J", "mzJ`z", { desc = "Join lines and keep cursor position" })
+  end 
   end
 
 H.apply_autocommands = function(config)
@@ -148,10 +341,19 @@ H.map = function(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, opts)
 
 end
-M.setup = function()
-  config = M.config
+H.my_ai = function()
+-- local bufnr = vim.api.nvim_get_current_buf()
+-- local filename = vim.api.nvim_buf_get_name(bufnr)
+-- vim.api.nvim_win_get_cursor(0)
+--
+-- local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+-- local content = table.concat(lines, '\n')
+end
+M.setup = function(config)
+  if config == {} then config = M.config end
   H.apply_options(config)
   H.apply_autocommands(config)
+  H.apply_mappings(config)
 end
 
 return M
