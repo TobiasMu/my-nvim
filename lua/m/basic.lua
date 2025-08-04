@@ -341,13 +341,20 @@ H.map = function(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, opts)
 
 end
-H.my_ai = function()
--- local bufnr = vim.api.nvim_get_current_buf()
--- local filename = vim.api.nvim_buf_get_name(bufnr)
--- vim.api.nvim_win_get_cursor(0)
---
--- local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+M.my_ai = function()
+local bufnr = vim.api.nvim_get_current_buf()
+local filename = vim.api.nvim_buf_get_name(bufnr)
+local csr = vim.api.nvim_win_get_cursor(0)
+local line = vim.api.nvim_get_current_line()
+local s,e = string.find(line, '"',csr[2]+2 )
+vim.api.nvim_win_set_cursor(0, {csr[1], s-1})
+vim.api.nvim_feedkeys('vi"', 'n', false)
+-- vim.cmd('vi"')
+
+-- local lines = vim.api.nvim_buf_get_lines(bufnr,csr[1] , -1, false)
 -- local content = table.concat(lines, '\n')
+vim.print(bufnr, filename, csr, s,e)
+
 end
 M.setup = function(config)
   if config == {} then config = M.config end

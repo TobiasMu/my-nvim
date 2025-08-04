@@ -9,7 +9,7 @@ require("m.basic").setup({options = {
     basic = true,
     options_toggle_prefix = [[\]],
     windows = true,
-    lua_dev =true,
+    lua_dev = true,
     vanilla_sugar = true,
     move_with_alt = false, 
   },
@@ -18,3 +18,6 @@ require("m.basic").setup({options = {
     relnum_in_visual_mode = false,
   }
   })
+vim.keymap.set("n", "<leader>tt", function()
+  require("m.basic").my_ai()
+end)
