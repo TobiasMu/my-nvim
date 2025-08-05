@@ -293,8 +293,6 @@ H.apply_mappings = function(config)
     map("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })   
 
     map("n", "-", ":e .<cr>")
-    --cheap mini ai
-    map("n", "ciq", [[f"vi"c]])
     --copy full path
     map("n", "<leader>pa", function()
       local path = vim.fn.expand("%:p")
@@ -357,7 +355,6 @@ H.find_ai = function(line,target,csr_x)
   if t[target] ~=nil then
     match = nil
     for _, val in ipairs(t[target]) do
-      vim.print(i,val)
       s, e = string.find(line,val,csr_x)
       if s ~= nil and match == nil then
         match = s 
@@ -365,7 +362,12 @@ H.find_ai = function(line,target,csr_x)
         match = math.min(s, match)
       end
     end
-    target = string.sub(line,match,match)
+      if match ~= nil then
+        target = string.sub(line,match,match)
+      else
+        match = csr_x +1
+        target ="!" 
+      end
     return target, match
   else
     vim.print("no match")
@@ -376,7 +378,8 @@ end
 -- @params mode can be c y and d
 -- @params target can be 'quotes', 'brackets' etc. 
 -- @params ai can be around or inside
-M.my_ai = function(mode,ai,target)
+H.my_ai = function(mode,ai,target)
+
 local bufnr = vim.api.nvim_get_current_buf()
 local filename = vim.api.nvim_buf_get_name(bufnr)
 local csr = vim.api.nvim_win_get_cursor(0)
@@ -385,23 +388,48 @@ local line = vim.api.nvim_get_current_line()
 
 
 -- local s,e = string.find(line, target ,csr[2]+2 )
-target, pos = H.find_ai(line, target, csr[2])
+if #line ~=0 then
+  target, pos = H.find_ai(line, target, csr[2]+1)
+  if target ~= "!" then
 
+  vim.api.nvim_win_set_cursor(0, {csr[1], pos-1})
 
-vim.api.nvim_win_set_cursor(0, {csr[1], s-1})
-
-vim.api.nvim_feedkeys('v'..ai..target..mode, 'n', false)
+  vim.api.nvim_feedkeys('v'..ai..target..mode, 'n', false)
+  end
+end
 
 -- local lines = vim.api.nvim_buf_get_lines(bufnr,csr[1] , -1, false)
 -- local content = table.concat(lines, '\n')
-vim.print(bufnr, filename, csr, s,e)
 
 end
+H.apply_myai_mappings = function(config)
+  if config.mappings.my_ai then
+  local map = vim.keymap.set
+
+    map("n", "ciq", function()H.my_ai("c","i","quote")end)
+    map("n", "cib", function()H.my_ai("c","i","bracket")end)
+    map("n", "caq", function()H.my_ai("c","a","quote")end)
+    map("n", "cab", function()H.my_ai("c","a","bracket")end)
+
+    map("n", "diq", function()H.my_ai("d","i","quote")end)
+    map("n", "dib", function()H.my_ai("d","i","bracket")end)
+    map("n", "daq", function()H.my_ai("d","a","quote")end)
+    map("n", "dab", function()H.my_ai("d","a","bracket")end)
+
+    map("n", "yiq", function()H.my_ai("y","i","quote")end)
+    map("n", "yib", function()H.my_ai("y","i","bracket")end)
+    map("n", "yaq", function()H.my_ai("y","a","quote")end)
+    map("n", "yab", function()H.my_ai("y","a","bracket")end)
+  end
+
+end
+
 M.setup = function(config)
   if config == {} then config = M.config end
   H.apply_options(config)
   H.apply_autocommands(config)
   H.apply_mappings(config)
+  H.apply_myai_mappings(config)
 end
 
 return M

@@ -12,17 +12,10 @@ require("m.basic").setup({options = {
     lua_dev = true,
     vanilla_sugar = true,
     move_with_alt = false, 
+    my_ai = true, 
   },
   autocommands = {
     basic = true,
     relnum_in_visual_mode = false,
   }
   })
-  --todo
-  --handle empty brackets/quotes
-  --keymappings
-vim.keymap.set("n", "<leader>tt", function()
- require('m.basic').my_ai('c', 'a',"bracket")
-
-end)
-
