@@ -1,5 +1,5 @@
 local M = {}
-local H = {} 
+local H = {}
 
 
 M.config = {
@@ -56,6 +56,7 @@ H.apply_options = function(config)
     opt.expandtab = true                           -- Use spaces instead of tabs
     opt.smartindent = true                         -- Smart auto-indenting
     opt.autoindent = true                          -- Copy indent from current line
+    opt.signcolumn = "yes"
 
     -- Search settings
     opt.ignorecase = true                          -- Case insensitive search
@@ -380,8 +381,6 @@ end
 -- @params ai can be around or inside
 H.my_ai = function(mode,ai,target)
 
-local bufnr = vim.api.nvim_get_current_buf()
-local filename = vim.api.nvim_buf_get_name(bufnr)
 local csr = vim.api.nvim_win_get_cursor(0)
 local line = vim.api.nvim_get_current_line()
 
@@ -424,6 +423,7 @@ H.apply_myai_mappings = function(config)
 
 end
 
+-- Map a key (e.g., '<leader>l') to trigger this function
 M.setup = function(config)
   if config == {} then config = M.config end
   H.apply_options(config)
