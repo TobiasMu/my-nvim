@@ -14,6 +14,7 @@ require("m.basic").setup({options = {
     vanilla_sugar = true,
     move_with_alt = false,
     my_ai = true,
+    better_f = true,
   },
   autocommands = {
     basic = true,

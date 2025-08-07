@@ -21,8 +21,6 @@ M.config = {
 
   }
 }
-setmetatable(M.config, {fuck= "fuck" })
-vim.print(getmetatable(M.config))
 
 H.apply_options = function(config)
   local o, opt = vim.o, vim.opt
@@ -278,11 +276,10 @@ H.apply_mappings = function(config)
   end
 
   if config.mappings.lua_dev then
-    
     map("n", "<leader>xx", ":so<cr>")
     map("n", "<leader>xl", ":.lua<cr>")
 
-  end 
+  end
 
   if config.mappings.vanilla_sugar then
  -- Normal mode mappings
@@ -291,7 +288,7 @@ H.apply_mappings = function(config)
     map("n", "n", "nzzzv", { desc = "Next search result (centered)" })
     map("n", "N", "Nzzzv", { desc = "Previous search result (centered)" })
     map("n", "<C-d>", "<C-d>zz", { desc = "Half page down (centered)" })
-    map("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })   
+    map("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })
 
     map("n", "-", ":e .<cr>")
     --copy full path
@@ -317,7 +314,12 @@ H.apply_mappings = function(config)
 
     -- Better J behavior
     map("n", "J", "mzJ`z", { desc = "Join lines and keep cursor position" })
-  end 
+  end
+  if config.mappings.better_f then
+
+    map("n", "f", function() H.move({}, "f") end)
+    map("n", "F", function() H.move({}, "F") end)
+  end
   end
 
 H.apply_autocommands = function(config)
@@ -341,6 +343,53 @@ H.map = function(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, opts)
 
 end
+
+H.jump_config = {
+  searchkey = nil,
+  forwardkey = "f",
+  backwardkey = "F",
+  cur_pos = {}
+}
+
+H.move = function(config, direction) ---@diagnostic disable-line
+  if vim.deep_equal({},config) then config = H.jump_config end
+  local map = vim.keymap.set
+
+  if config.searchkey == nil then
+    local next_key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
+    config.searchkey = next_key
+    vim.api.nvim_feedkeys( direction .. next_key, "n", true)
+    vim.schedule(function()
+      config.cur_pos = vim.api.nvim_win_get_cursor(0)end )
+    -- config.cur_pos = vim.api.nvim_win_get_cursor(0)
+    map("n", "f", function() H.move(config, "f") end)
+    map("n", "F", function() H.move(config, "F") end)
+
+    return
+    end
+
+  local csr = vim.api.nvim_win_get_cursor(0)
+  if config.searchkey ~=nil and vim.deep_equal(csr,config.cur_pos) then
+    vim.api.nvim_feedkeys(direction .. config.searchkey, "n", false)
+    vim.schedule(function()
+      config.cur_pos = vim.api.nvim_win_get_cursor(0)
+    end)
+    map("n", "f", function() H.move(config, "f") end)
+    map("n", "F", function() H.move(config, "F") end)
+    return
+  end
+  if config.searchkey ~=nil and not vim.deep_equal(csr,config.cur_pos) then
+
+    local next_key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
+    config.searchkey = next_key
+    vim.api.nvim_feedkeys( direction .. next_key, "n", true)
+    vim.schedule(function()
+      config.cur_pos = vim.api.nvim_win_get_cursor(0)end )
+    map("n", "f", function() H.move(config, "f") end)
+    map("n", "F", function() H.move(config, "F") end)
+  end
+  end
+
 
 H.find_ai = function(line,target,csr_x)
   t = {
