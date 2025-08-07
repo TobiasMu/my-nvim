@@ -14,7 +14,8 @@ H.move = function(config, direction) ---@diagnostic disable-line
   if config.searchkey == nil then
     local next_key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
     config.searchkey = next_key
-    vim.api.nvim_feedkeys( direction .. next_key, "n", true)
+    -- vim.api.nvim_feedkeys( direction .. next_key, "n", true)
+    vim.cmd('/'..next_key)
     vim.schedule(function()
       config.cur_pos = vim.api.nvim_win_get_cursor(0)end )
     -- config.cur_pos = vim.api.nvim_win_get_cursor(0)
