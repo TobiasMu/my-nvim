@@ -30,3 +30,4 @@ vim.keymap.set('n', 'gK', function()
   vim.diagnostic.config({ virtual_text = new_config })
 end, { desc = 'Toggle diagnostic virtual_text' })
 
+vim.keymap.del("n", "J")

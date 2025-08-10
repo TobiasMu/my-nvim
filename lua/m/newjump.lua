@@ -7,21 +7,33 @@ H.jump_config = {
   last_pos = {}
 }
 
-H.move = function(config) ---@diagnostic disable-line
+H.move = function(direction, config) ---@diagnostic disable-line
   if config == nil then config = H.jump_config end
   local csr = vim.api.nvim_win_get_cursor(0)
 
 
   if config.searchkey == nil then
     local key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
-    vim.api.nvim_feedkeys('/'..key .. '\r', "n", true)
+    if direction == "forward" then
+      vim.api.nvim_feedkeys('/'..key .. '\r', "n", true)
+    end
+    if direction == "backward" then
+      vim.api.nvim_feedkeys('?'..key .. '\r', "n", true)
+    end
+
     config.searchkey = key
     vim.schedule(function()
     config.last_pos = vim.api.nvim_win_get_cursor(0)end)
     return
   end
   if config.searchkey ~= nil and vim.deep_equal(csr, config.last_pos) then
+    if direction == "forward" then
     vim.api.nvim_feedkeys('n', "n", true)
+      end
+    if direction == "backward" then
+    vim.api.nvim_feedkeys('N', "n", true)
+      end
+
     vim.schedule(function()
     config.last_pos = vim.api.nvim_win_get_cursor(0)end)
   end
@@ -31,5 +43,6 @@ H.move = function(config) ---@diagnostic disable-line
     H.move(config)
   end
   end
-vim.keymap.set("n","f",function()H.move()end)
+vim.keymap.set("n","f",function()H.move("forward")end)
+vim.keymap.set("n","F",function()H.move("backward")end)
 
