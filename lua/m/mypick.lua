@@ -30,10 +30,7 @@ local buf = vim.api.nvim_create_buf(false, true) -- No file, scratch buffer
 require("m.basic")
   -- Create the floating window
   local win = vim.api.nvim_open_win(buf, true, win_config)
-
-local cwd = vim.fn.getcwd(0)
-local ufs = vim.uv.fs_opendir(cwd)
--- vim.print(vim.uv.fs_scandir_next(ufs))
 --
 vim.print(vim.uv.fs_readdir(ufs))
+vim.print(vim.fn.getcurpos())
 
