@@ -316,8 +316,8 @@ H.apply_mappings = function(config)
   end
   if config.mappings.better_f then
 
-    map("n", "f", function() H.move({}, "f") end)
-    map("n", "F", function() H.move({}, "F") end)
+    map({"n","v"},"f",function()H.move("forward")end)
+    map({"n","v"},"F",function()H.move("backward")end)
   end
   end
 
@@ -350,42 +350,39 @@ H.jump_config = {
   cur_pos = {}
 }
 
-H.move = function(config, direction) ---@diagnostic disable-line
-  if vim.deep_equal({},config) then config = H.jump_config end
-  local map = vim.keymap.set
+H.move = function(direction, config) ---@diagnostic disable-line
+  if config == nil then config = H.jump_config end
+  local csr = vim.api.nvim_win_get_cursor(0)
+
+  if config.searchkey ~= nil and not vim.deep_equal(csr, config.last_pos) then
+    config.searchkey = nil
+    config.last_pos = {}
+  end
 
   if config.searchkey == nil then
-    local next_key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
-    config.searchkey = next_key
-    vim.api.nvim_feedkeys( direction .. next_key, "n", true)
-    vim.schedule(function()
-      config.cur_pos = vim.api.nvim_win_get_cursor(0)end )
-    -- config.cur_pos = vim.api.nvim_win_get_cursor(0)
-    map("n", "f", function() H.move(config, "f") end)
-    map("n", "F", function() H.move(config, "F") end)
-
-    return
+    local key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
+    config.searchkey = key
+    if direction == "forward" then
+      vim.api.nvim_feedkeys('/'..key .. '\r', "n", true)
+    end
+    if direction == "backward" then
+      vim.api.nvim_feedkeys('?'..key .. '\r', "n", true)
     end
 
-  local csr = vim.api.nvim_win_get_cursor(0)
-  if config.searchkey ~=nil and vim.deep_equal(csr,config.cur_pos) then
-    vim.api.nvim_feedkeys(direction .. config.searchkey, "n", false)
     vim.schedule(function()
-      config.cur_pos = vim.api.nvim_win_get_cursor(0)
-    end)
-    map("n", "f", function() H.move(config, "f") end)
-    map("n", "F", function() H.move(config, "F") end)
+    config.last_pos = vim.api.nvim_win_get_cursor(0)end)
     return
   end
-  if config.searchkey ~=nil and not vim.deep_equal(csr,config.cur_pos) then
+  if config.searchkey ~= nil and vim.deep_equal(csr, config.last_pos) then
+    if direction == "forward" then
+    vim.api.nvim_feedkeys('n', "n", true)
+      end
+    if direction == "backward" then
+    vim.api.nvim_feedkeys('N', "n", true)
+      end
 
-    local next_key = string.char(vim.fn.getchar()) ---@diagnostic disable-line 
-    config.searchkey = next_key
-    vim.api.nvim_feedkeys( direction .. next_key, "n", true)
     vim.schedule(function()
-      config.cur_pos = vim.api.nvim_win_get_cursor(0)end )
-    map("n", "f", function() H.move(config, "f") end)
-    map("n", "F", function() H.move(config, "F") end)
+    config.last_pos = vim.api.nvim_win_get_cursor(0)end)
   end
   end
 
