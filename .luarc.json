@@ -1,0 +1,8 @@
+{
+    "diagnostics.globals": [
+        "a"
+    ],
+    "diagnostics.disable": [
+        "param-type-mismatch"
+    ]
+}
